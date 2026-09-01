@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Resource Nations: Build a Successful Country</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+    --accent:#2563eb; --accent2:#0f766e; --warn:#b45309; --danger:#b91c1c;
+    --border:#dbe3ee; --good:#166534;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px}
+  header{background:linear-gradient(135deg,#1d4ed8,#0f766e);color:white;padding:24px;border-radius:18px;margin-bottom:18px}
+  h1{margin:0 0 8px;font-size:clamp(26px,4vw,42px)}
+  h2{margin-top:0}
+  .sub{opacity:.95}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin:14px 0;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .country{cursor:pointer;transition:.2s;border:2px solid transparent}
+  .country:hover{transform:translateY(-2px);border-color:#93c5fd}
+  .country.selected{border-color:var(--accent);background:#eff6ff}
+  .pill{display:inline-block;padding:5px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:13px;margin:3px}
+  button{border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;background:var(--accent);color:white;margin:6px 6px 0 0}
+  button.secondary{background:#475569}
+  button.good{background:var(--accent2)}
+  button.warn{background:var(--warn)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .hidden{display:none}
+  .choice{border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0;cursor:pointer;background:white}
+  .choice:hover{border-color:#60a5fa}
+  .choice.selected{border:2px solid var(--accent);background:#eff6ff}
+  .meter{height:12px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+  .bar{height:100%;background:linear-gradient(90deg,#2563eb,#14b8a6)}
+  .scoregrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .scorebox{background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+  .big{font-size:28px;font-weight:800}
+  .feedback{padding:12px;border-radius:10px;background:#f1f5f9;margin-top:10px}
+  .goodtext{color:var(--good);font-weight:700}
+  .badtext{color:var(--danger);font-weight:700}
+  .small{font-size:14px;color:var(--muted)}
+  ul{padding-left:20px}
+  textarea{width:100%;min-height:90px;border:1px solid var(--border);border-radius:10px;padding:10px;font:inherit}
+  select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:white}
+  @media (max-width:700px){.scoregrid{grid-template-columns:repeat(2,1fr)}}
+  #resultsSummaryCard{border:3px solid #1d4ed8;background:#fff}
+  .summary-row{padding:8px 0;border-bottom:1px solid #e5e7eb}
+  .summary-row:last-child{border-bottom:0}
+  .summary-title{font-size:28px;font-weight:800;margin-bottom:6px}
+  @media print{
+    body{background:white}
+    body *{visibility:hidden}
+    #resultsSummaryCard, #resultsSummaryCard *{visibility:visible}
+    #resultsSummaryCard{position:absolute;left:0;top:0;width:100%;box-shadow:none;border:0}
+    #resultsSummaryCard button{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>🌍 Resource Nations</h1>
+  <div class="sub">Build a successful country using geography, people, technology, and trade.</div>
+</header>
+
+<section id="start" class="card">
+  <h2>Mission</h2>
+  <p>You are now in charge of a country. Every country has strengths, weaknesses, and challenges. Your goal is to make smart decisions and finish with the strongest overall nation.</p>
+  <p><strong>Important:</strong> No country has everything it needs. You will need to make choices, respond to a surprise event, and trade with another nation.</p>
+  <label for="studentName"><strong>Your Name:</strong></label>
+  <input id="studentName" type="text" placeholder="Type your name here." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;font:inherit;margin:8px 0 10px;">
+  <button onclick="startGame()">Start Game</button>
+</section>
+
+<section id="countryScreen" class="card hidden">
+  <h2>Round 1: Choose Your Country</h2>
+  <div id="countryGrid" class="grid"></div>
+  <button id="countryContinue" disabled onclick="beginCountry()">Continue</button>
+</section>
+
+<section id="profileScreen" class="card hidden">
+  <h2 id="countryName"></h2>
+  <div id="profileContent"></div>
+  <h3>Your Analysis</h3>
+  <p><strong>What are your country's biggest advantages, biggest problems, and what could it produce well?</strong></p>
+  <textarea id="analysisBox" placeholder="Type your analysis here."></textarea>
+  <button onclick="showDevelopment()">Make a Development Decision</button>
+</section>
+
+<section id="developmentScreen" class="card hidden">
+  <h2>Round 2: Development Decision</h2>
+  <p>Your government can fund <strong>ONE major project</strong> this year. Choose carefully.</p>
+  <div id="developmentChoices"></div>
+  <button id="devContinue" disabled onclick="resolveDevelopment()">Lock In Decision</button>
+</section>
+
+<section id="devResultScreen" class="card hidden">
+  <h2>Development Result</h2>
+  <div id="devResult"></div>
+  <button onclick="showEvent()">Continue to Breaking News</button>
+</section>
+
+<section id="eventScreen" class="card hidden">
+  <h2>🚨 Round 3: Breaking News</h2>
+  <div id="eventCard"></div>
+  <div id="eventChoices"></div>
+  <button id="eventContinue" disabled onclick="resolveEvent()">Respond to Crisis</button>
+</section>
+
+<section id="eventResultScreen" class="card hidden">
+  <h2>Crisis Result</h2>
+  <div id="eventResult"></div>
+  <button onclick="showTrade()">Enter the Trade Summit</button>
+</section>
+
+<section id="tradeScreen" class="card hidden">
+  <h2>🤝 Round 4: Trade Summit</h2>
+  <p>No nation has everything it needs. Choose a partner and negotiate one trade.</p>
+  <div class="grid">
+    <div>
+      <label><strong>Trade with:</strong></label>
+      <select id="tradePartner" onchange="populateTradeOptions()"></select>
+    </div>
+    <div>
+      <label><strong>What do you want?</strong></label>
+      <select id="tradeWant"></select>
+    </div>
+    <div>
+      <label><strong>What will you offer?</strong></label>
+      <select id="tradeOffer"></select>
+    </div>
+  </div>
+  <button onclick="resolveTrade()">Make Trade</button>
+  <div id="tradeFeedback"></div>
+</section>
+
+
+<section id="policyScreen" class="card hidden">
+  <h2>🏛️ Round 5: Final National Policy</h2>
+  <p>Your country is growing, but you can only prioritize <strong>ONE national policy</strong> for the next five years. Each choice helps in one area and creates a tradeoff somewhere else.</p>
+  <div id="policyChoices"></div>
+  <button id="policyContinue" disabled onclick="resolvePolicy()">Lock In Policy</button>
+</section>
+
+<section id="policyResultScreen" class="card hidden">
+  <h2>Policy Consequence</h2>
+  <div id="policyResult"></div>
+  <button class="good" onclick="finishGame()">See Final Results</button>
+</section>
+
+<section id="finalScreen" class="card hidden">
+  <h2>🏁 Final Results</h2>
+  <div id="finalSummary"></div>
+  <div class="scoregrid" id="scoreBoxes"></div>
+  <div id="successScale" class="card" style="margin-top:18px"></div>
+  <h3>Vocabulary Reveal</h3>
+  <div class="grid">
+    <div class="choice"><strong>Natural Resources</strong><br><span class="small">Resources that come from the Earth.</span></div>
+    <div class="choice"><strong>Human Resources</strong><br><span class="small">People and their education, skills, and abilities.</span></div>
+    <div class="choice"><strong>Capital Resources</strong><br><span class="small">Money, infrastructure, tools, machines, equipment, and technology used in production.</span></div>
+    <div class="choice"><strong>Interdependence</strong><br><span class="small">Countries depend on one another because resources are distributed unevenly.</span></div>
+  </div>
+  <h3>Exit Reflection</h3>
+  <p><strong>Which was more important to your country's success: natural resources, people, or capital? Use evidence from the game.</strong></p>
+  <textarea id="reflectionBox" placeholder="Type your reflection here."></textarea>
+  <br>
+  <button class="good" onclick="generateSummary()">Generate My Results Summary</button>
+  <button class="secondary" onclick="location.reload()">Play Again</button>
+
+  <div id="resultsSummaryCard" class="card hidden" style="margin-top:22px">
+    <div class="summary-title">🌍 Resource Nations — Results Summary</div>
+    <div id="studentSummaryName" class="summary-row"></div>
+    <div id="studentSummaryCountry" class="summary-row"></div>
+    <div id="studentSummaryResult" class="summary-row"></div>
+    <div id="studentSummaryScores" class="summary-row"></div>
+    <div id="studentSummaryAnalysis" class="summary-row"></div>
+    <div id="studentSummaryDecisions" class="summary-row"></div>
+    <div id="studentSummaryReflection" class="summary-row"></div>
+    <p class="small" style="margin-top:14px"><strong>Submission:</strong> Take a screenshot of this card or use the Print / Save as PDF button and submit it to Canvas.</p>
+    <button onclick="window.print()">Print / Save as PDF</button>
+  </div>
+</section>
+
+
+</div>
+
+<script>
+const countries = {
+  "Green Valley":{
+    emoji:"🌾", geography:["Flat fertile land","Several major rivers","Mild climate","Large forests"],
+    people:["Large population","Many experienced farmers","Few highly trained engineers/scientists"],
+    capital:["Limited factories","Older roads","Little advanced technology","Limited investment money"],
+    challenge:"Population is growing quickly and needs more jobs.",
+    strengths:["Food","Water","Timber"], needs:["Technology","Investment","Advanced manufacturing"],
+    event:{title:"Drought",text:"Rainfall is far below normal. Rivers are lower and crops are struggling.",
+      choices:[
+        ["Build emergency irrigation systems",{eco:1,people:1,capital:-1,trade:0},"You protect food production, but it is expensive."],
+        ["Import food and conserve water",{eco:0,people:1,capital:0,trade:2},"Trade keeps people supplied, but dependence increases."],
+        ["Expand farmland anyway",{eco:1,people:-1,capital:0,trade:0},"Short-term output rises, but environmental pressure increases."]
+      ]}
+  },
+  "Techland":{
+    emoji:"💻", geography:["Small country","Mountainous","Very little farmland","Few energy resources"],
+    people:["Highly educated population","Many engineers, scientists, doctors, and computer specialists"],
+    capital:["Excellent transportation","Advanced technology","Modern factories","Significant investment money"],
+    challenge:"Cannot produce enough food or energy for its population.",
+    strengths:["Technology","Skilled workers","Capital"], needs:["Food","Energy","Raw materials"],
+    event:{title:"Energy Shortage",text:"Foreign suppliers sharply increase energy prices.",
+      choices:[
+        ["Invest in solar and wind",{eco:1,people:1,capital:-1,trade:0},"Expensive now, but reduces long-term dependence."],
+        ["Pay higher prices",{eco:-1,people:0,capital:-1,trade:1},"Needs are met, but the economy loses money."],
+        ["Trade technology for energy",{eco:1,people:0,capital:1,trade:2},"Your human and capital resources become bargaining tools."]
+      ]}
+  },
+  "Petrovia":{
+    emoji:"🛢️", geography:["Large desert","Very little farmland","Limited freshwater","Huge petroleum reserves"],
+    people:["Small population","Many petroleum workers"],
+    capital:["Modern ports","Good highways","Strong income from petroleum exports"],
+    challenge:"Most needs other than petroleum must come from elsewhere.",
+    strengths:["Petroleum","Money","Ports"], needs:["Food","Water","Technology"],
+    event:{title:"Oil Price Collapse",text:"World petroleum prices fall dramatically, cutting national income.",
+      choices:[
+        ["Invest in new industries",{eco:2,people:1,capital:-1,trade:0},"Diversification reduces dependence on one resource."],
+        ["Pump and sell more oil",{eco:0,people:-1,capital:0,trade:0},"Revenue rises briefly, but dependence remains."],
+        ["Cut spending everywhere",{eco:-1,people:-1,capital:1,trade:0},"Money is saved, but public services suffer."]
+      ]}
+  },
+  "Mountain Republic":{
+    emoji:"⛰️", geography:["Mountainous terrain","Fast-moving rivers","Large mineral deposits","Strong winds"],
+    people:["Medium population","Many miners and construction workers"],
+    capital:["Few highways","Limited farmland","Growing manufacturing industry"],
+    challenge:"Mountains make transportation and construction difficult.",
+    strengths:["Minerals","Hydropower potential","Wind"], needs:["Food","Transportation","Technology"],
+    event:{title:"Earthquake",text:"An earthquake damages important mountain roads.",
+      choices:[
+        ["Rebuild stronger roads and bridges",{eco:1,people:1,capital:-1,trade:0},"Costly, but future transportation becomes more reliable."],
+        ["Reroute trade through neighboring countries",{eco:0,people:0,capital:0,trade:2},"Trade keeps goods moving despite damaged infrastructure."],
+        ["Delay repairs",{eco:-1,people:-1,capital:1,trade:0},"You save money now but economic activity slows."]
+      ]}
+  },
+  "Forestia":{
+    emoji:"🌲", geography:["Huge forests","Large freshwater supply","Moderate farmland","Significant wildlife"],
+    people:["Small population","Many forestry and agricultural workers"],
+    capital:["Limited manufacturing","Limited technology","Few universities"],
+    challenge:"Overcutting could damage one of the country's most important resources.",
+    strengths:["Timber","Water","Food"], needs:["Technology","Education","Manufacturing"],
+    event:{title:"Deforestation",text:"Logging creates jobs, but forests are disappearing rapidly.",
+      choices:[
+        ["Require replanting and sustainable logging",{eco:1,people:1,capital:0,trade:0},"Jobs continue while protecting the resource."],
+        ["Ban most logging immediately",{eco:-1,people:1,capital:0,trade:0},"Forests recover, but many workers lose jobs."],
+        ["Increase logging",{eco:2,people:-2,capital:1,trade:0},"Profits rise now, but long-term sustainability declines."]
+      ]}
+  },
+  "Sun Coast":{
+    emoji:"☀️", geography:["Hot sunny climate","Long coastline","Limited freshwater","Poor soil","Strong coastal winds"],
+    people:["Growing population","Many tourism and service workers"],
+    capital:["Good ports","Developing transportation","Limited fossil fuels"],
+    challenge:"Population needs more electricity and freshwater.",
+    strengths:["Solar potential","Wind potential","Ports"], needs:["Freshwater","Food","Energy infrastructure"],
+    event:{title:"Population Boom",text:"Thousands move to coastal cities. Electricity and freshwater demand soar.",
+      choices:[
+        ["Build solar/wind plus desalination",{eco:1,people:2,capital:-2,trade:0},"Very expensive, but directly addresses both shortages."],
+        ["Import more energy and water",{eco:0,people:1,capital:-1,trade:2},"Quick solution, but increases dependence."],
+        ["Limit new development",{eco:-1,people:0,capital:1,trade:0},"Demand slows, but growth and jobs also slow."]
+      ]}
+  }
+};
+
+const developments = [
+  ["Build a University","Improves education and worker skills, but costs money now.",{people:3,capital:-1,eco:1,trade:0},
+   "Your workforce becomes more skilled. Long-term growth improves, but the project requires major investment."],
+  ["Build a Factory","Increases manufacturing capacity and jobs, but can create pollution.",{capital:2,eco:3,people:-1,trade:0},
+   "Manufacturing grows quickly. Jobs and output rise, but environmental and quality-of-life concerns appear."],
+  ["Build Highways & Railroads","Improves transportation and trade, but construction is expensive.",{capital:3,trade:2,eco:1,people:-1},
+   "Goods and people move more easily. Trade improves, though construction disrupts communities and costs a lot."],
+  ["Build a Power Plant","Adds reliable electricity, but creates environmental and financial tradeoffs.",{capital:2,eco:2,people:-1,trade:0},
+   "Businesses gain dependable power. Your economy benefits, but environmental concerns increase."],
+  ["Expand Farmland","Produces more food, but uses more land and may damage ecosystems.",{eco:2,people:-2,capital:0,trade:0},
+   "Food production increases. However, habitat loss and erosion become new concerns."],
+  ["Invest in Renewable Energy","Adds cleaner energy, but requires high upfront costs.",{capital:1,eco:1,people:3,trade:0},
+   "Your country becomes more sustainable and less dependent on fossil fuels, though growth is slower at first."],
+  ["Build a Major Port","Makes international trade easier and expands exports.",{capital:2,trade:3,eco:2,people:0},
+   "Trade booms and exports grow. The country becomes more connected to global markets."],
+  ["Expand Public Transportation","Reduces congestion and improves access to jobs, but needs ongoing funding.",{people:2,capital:2,eco:1,trade:0},
+   "Workers can reach jobs more easily and cities become more efficient, but the system is expensive to maintain."],
+  ["Protect Natural Areas","Limits development to conserve forests, water, and wildlife.",{people:3,eco:-1,capital:0,trade:0},
+   "Environmental quality improves, but some businesses lose access to land and resources."],
+  ["Create a National Technology Fund","Supports research, communication, and innovation.",{people:2,capital:2,eco:2,trade:1},
+   "Innovation accelerates and productivity improves, but benefits may take time to reach everyone."]
+];
+
+let chosen=null, devChoice=null, eventChoice=null;
+let studentName="", initialAnalysis="", tradeSummary="", finalLevel="", finalTotal=0;
+let score={eco:5,people:5,capital:5,trade:2};
+
+function startGame(){
+  studentName = document.getElementById("studentName").value.trim() || "Student";
+  showScreen("countryScreen");
+}
+
+function showScreen(id){
+  document.querySelectorAll("section.card").forEach(s=>{
+    if(!s.classList.contains("teacher")) s.classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function renderCountries(){
+  const g=document.getElementById("countryGrid");
+  g.innerHTML="";
+  Object.entries(countries).forEach(([name,c])=>{
+    const d=document.createElement("div"); d.className="card country";
+    d.innerHTML=`<div class="big">${c.emoji}</div><h3>${name}</h3><p>${c.challenge}</p>`;
+    d.onclick=()=>{
+      document.querySelectorAll(".country").forEach(x=>x.classList.remove("selected"));
+      d.classList.add("selected"); chosen=name;
+      document.getElementById("countryContinue").disabled=false;
+    };
+    g.appendChild(d);
+  });
+}
+function beginCountry(){
+  const c=countries[chosen];
+  document.getElementById("countryName").textContent=`${c.emoji} ${chosen}`;
+  document.getElementById("profileContent").innerHTML=`
+    <div class="grid">
+      <div><h3>Geography</h3><ul>${c.geography.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+      <div><h3>People</h3><ul>${c.people.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+      <div><h3>Other Advantages/Limitations</h3><ul>${c.capital.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+    </div>
+    <div class="feedback"><strong>National Challenge:</strong> ${c.challenge}</div>`;
+  showScreen("profileScreen");
+}
+function showDevelopment(){
+  initialAnalysis = document.getElementById("analysisBox").value.trim();
+  const box=document.getElementById("developmentChoices"); box.innerHTML="";
+  developments.forEach((d,i)=>{
+    const el=document.createElement("div"); el.className="choice";
+    el.innerHTML=`<strong>${d[0]}</strong><br><span class="small">${d[1]}</span>`;
+    el.onclick=()=>{
+      document.querySelectorAll("#developmentChoices .choice").forEach(x=>x.classList.remove("selected"));
+      el.classList.add("selected"); devChoice=i;
+      document.getElementById("devContinue").disabled=false;
+    };
+    box.appendChild(el);
+  });
+  showScreen("developmentScreen");
+}
+function apply(delta){
+  Object.entries(delta).forEach(([k,v])=>score[k]=(score[k]||0)+v);
+}
+function fmtChange(v){
+  const n = v || 0;
+  return n > 0 ? `+${n}` : `${n}`;
+}
+function resolveDevelopment(){
+  const d=developments[devChoice]; apply(d[2]);
+  document.getElementById("devResult").innerHTML=`
+    <p>You chose <strong>${d[0]}</strong>.</p>
+    <p>${d[1]}</p>
+    <div class="feedback">${d[3] || "Your decision changed your country's economy, people, infrastructure, or trade capacity."}</div>
+    <div class="small"><strong>Consequence:</strong> Economy ${fmtChange(d[2].eco)}, People & Sustainability ${fmtChange(d[2].people)}, Infrastructure/Capital ${fmtChange(d[2].capital)}, Trade ${fmtChange(d[2].trade)}</div>`;
+  showScreen("devResultScreen");
+}
+function showEvent(){
+  const e=countries[chosen].event;
+  document.getElementById("eventCard").innerHTML=`<div class="feedback"><strong>${e.title}</strong><br>${e.text}</div>`;
+  const area=document.getElementById("eventChoices"); area.innerHTML="";
+  e.choices.forEach((c,i)=>{
+    const el=document.createElement("div"); el.className="choice";
+    el.innerHTML=`<strong>${c[0]}</strong>`;
+    el.onclick=()=>{
+      document.querySelectorAll("#eventChoices .choice").forEach(x=>x.classList.remove("selected"));
+      el.classList.add("selected"); eventChoice=i;
+      document.getElementById("eventContinue").disabled=false;
+    };
+    area.appendChild(el);
+  });
+  showScreen("eventScreen");
+}
+function resolveEvent(){
+  const c=countries[chosen].event.choices[eventChoice]; apply(c[1]);
+  document.getElementById("eventResult").innerHTML=`
+    <p><strong>${c[0]}</strong></p>
+    <div class="feedback">${c[2]}</div>
+    <div class="small"><strong>Consequence:</strong> Economy ${fmtChange(c[1].eco)}, People & Sustainability ${fmtChange(c[1].people)}, Infrastructure/Capital ${fmtChange(c[1].capital)}, Trade ${fmtChange(c[1].trade)}</div>`;
+  showScreen("eventResultScreen");
+}
+function showTrade(){
+  const p=document.getElementById("tradePartner"); p.innerHTML="";
+  Object.keys(countries).filter(x=>x!==chosen).forEach(n=>p.add(new Option(n,n)));
+  populateTradeOptions();
+  const offer=document.getElementById("tradeOffer"); offer.innerHTML="";
+  countries[chosen].strengths.forEach(x=>offer.add(new Option(x,x)));
+  showScreen("tradeScreen");
+}
+function populateTradeOptions(){
+  const partner=document.getElementById("tradePartner").value || Object.keys(countries).find(x=>x!==chosen);
+  const want=document.getElementById("tradeWant"); want.innerHTML="";
+  countries[partner].strengths.forEach(x=>want.add(new Option(x,x)));
+}
+function resolveTrade(){
+  const partner=document.getElementById("tradePartner").value;
+  const want=document.getElementById("tradeWant").value;
+  const offer=document.getElementById("tradeOffer").value;
+  score.trade+=2; score.eco+=1;
+  tradeSummary = `${chosen} offered ${offer} to ${partner} in exchange for ${want}.`;
+  document.getElementById("tradeFeedback").innerHTML=
+    `<div class="feedback goodtext">Trade completed! ${tradeSummary} Your country becomes more interdependent—and better able to meet its needs.</div>
+     <button class="good" onclick="showPolicy()">Continue to Final Decision</button>`;
+}
+
+const policies = [
+  ["Grow the Economy Fast","Lower business costs and encourage rapid development.",{eco:3,capital:2,people:-2,trade:1},
+   "Growth speeds up, but environmental and community pressures increase."],
+  ["Protect Resources First","Create strict rules for water, forests, farmland, and pollution.",{people:3,eco:-2,capital:0,trade:0},
+   "Resources are protected for the future, but some industries expand more slowly."],
+  ["Invest in People","Spend heavily on schools, health, and worker training.",{people:3,eco:1,capital:-1,trade:0},
+   "Quality of life and workforce skills improve, though the government has less money for infrastructure."],
+  ["Expand Global Trade","Reduce trade barriers and invest in exports.",{trade:3,eco:2,capital:1,people:-1},
+   "The economy becomes more connected and productive, but dependence on other countries rises."],
+  ["Balance Growth and Sustainability","Use moderate development rules and gradual investment.",{eco:1,people:2,capital:1,trade:1},
+   "No single category grows dramatically, but the country becomes more balanced and resilient."],
+  ["Focus on Self-Sufficiency","Increase domestic food, energy, and manufacturing even when it costs more.",{eco:1,capital:2,trade:-2,people:1},
+   "Dependence on imports falls, but your country gives up some benefits of international trade."]
+];
+
+let policyChoice=null;
+
+function showPolicy(){
+  const area=document.getElementById("policyChoices"); area.innerHTML="";
+  policies.forEach((p,i)=>{
+    const el=document.createElement("div"); el.className="choice";
+    el.innerHTML=`<strong>${p[0]}</strong><br><span class="small">${p[1]}</span>`;
+    el.onclick=()=>{
+      document.querySelectorAll("#policyChoices .choice").forEach(x=>x.classList.remove("selected"));
+      el.classList.add("selected"); policyChoice=i;
+      document.getElementById("policyContinue").disabled=false;
+    };
+    area.appendChild(el);
+  });
+  showScreen("policyScreen");
+}
+
+function resolvePolicy(){
+  const p=policies[policyChoice]; apply(p[2]);
+  document.getElementById("policyResult").innerHTML=`
+    <p>You chose <strong>${p[0]}</strong>.</p>
+    <div class="feedback">${p[3]}</div>
+    <div class="small"><strong>Consequence:</strong> Economy ${fmtChange(p[2].eco)}, People & Sustainability ${fmtChange(p[2].people)}, Infrastructure/Capital ${fmtChange(p[2].capital)}, Trade ${fmtChange(p[2].trade)}</div>`;
+  showScreen("policyResultScreen");
+}
+
+function clamp(n){return Math.max(0,Math.min(10,n))}
+function finishGame(){
+  Object.keys(score).forEach(k=>score[k]=clamp(score[k]));
+  const total=score.eco+score.people+score.capital+score.trade;
+
+  let level, msg, classText;
+  if(total >= 32){
+    level = "Level 4 — Highly Successful";
+    msg = "Your country is thriving. Your decisions created a strong balance of economic growth, people, infrastructure, and international connections.";
+    classText = "goodtext";
+  } else if(total >= 26){
+    level = "Level 3 — Successful";
+    msg = "Your country is successful and stable. Most of your decisions helped, although a few tradeoffs still need attention.";
+    classText = "goodtext";
+  } else if(total >= 20){
+    level = "Level 2 — Developing";
+    msg = "Your country is developing, but several weaknesses remain. A different mix of decisions could improve long-term stability.";
+    classText = "";
+  } else {
+    level = "Level 1 — Facing Major Challenges";
+    msg = "Your country is struggling. Some choices solved short-term problems but created larger economic, environmental, or trade challenges.";
+    classText = "badtext";
+  }
+
+  finalLevel = level;
+  finalTotal = total;
+
+  document.getElementById("finalSummary").innerHTML=`<p><strong>${countries[chosen].emoji} ${chosen}</strong></p>
+    <p class="${classText}">${level}</p>
+    <p>${msg}</p>
+    <p><strong>Total Score: ${total}/40</strong></p>
+    <p class="small">There is no perfect country. Geography creates opportunities and limitations, and countries often depend on people, technology, investment, and trade to overcome what they lack.</p>`;
+
+  const labels={eco:"Economy",people:"People & Sustainability",capital:"Infrastructure/Capital",trade:"Trade & Interdependence"};
+  document.getElementById("scoreBoxes").innerHTML=Object.entries(score).map(([k,v])=>`
+    <div class="scorebox"><div>${labels[k]}</div><div class="big">${v}/10</div><div class="meter"><div class="bar" style="width:${v*10}%"></div></div></div>`).join("");
+
+  document.getElementById("successScale").innerHTML=`
+    <h3>Success Scale</h3>
+    <p>Use the total score to see how successful your country became.</p>
+    <div class="grid">
+      <div class="choice"><strong>32–40: Level 4 — Highly Successful</strong><br><span class="small">Strong and balanced country with few major weaknesses.</span></div>
+      <div class="choice"><strong>26–31: Level 3 — Successful</strong><br><span class="small">Stable country with mostly effective decisions.</span></div>
+      <div class="choice"><strong>20–25: Level 2 — Developing</strong><br><span class="small">Some success, but important weaknesses remain.</span></div>
+      <div class="choice"><strong>0–19: Level 1 — Facing Major Challenges</strong><br><span class="small">Major problems remain in multiple areas.</span></div>
+    </div>
+    <div class="feedback"><strong>Your Result:</strong> ${level} (${total}/40)</div>`;
+  showScreen("finalScreen");
+}
+
+function generateSummary(){
+  const reflection = document.getElementById("reflectionBox").value.trim() || "No reflection entered.";
+  const dev = developments[devChoice];
+  const event = countries[chosen].event.choices[eventChoice];
+  const policy = policies[policyChoice];
+
+  document.getElementById("studentSummaryName").innerHTML =
+    `<strong>Student:</strong> ${escapeHtml(studentName)}`;
+  document.getElementById("studentSummaryCountry").innerHTML =
+    `<strong>Country:</strong> ${countries[chosen].emoji} ${chosen}`;
+  document.getElementById("studentSummaryResult").innerHTML =
+    `<strong>Overall Result:</strong> ${finalLevel} — ${finalTotal}/40`;
+  document.getElementById("studentSummaryScores").innerHTML =
+    `<strong>Ratings:</strong> Economy ${score.eco}/10 • People & Sustainability ${score.people}/10 • Infrastructure/Capital ${score.capital}/10 • Trade & Interdependence ${score.trade}/10`;
+  document.getElementById("studentSummaryAnalysis").innerHTML =
+    `<strong>Initial Analysis:</strong><br>${escapeHtml(initialAnalysis || "No analysis entered.")}`;
+  document.getElementById("studentSummaryDecisions").innerHTML =
+    `<strong>Major Decisions:</strong><br>
+     Development: ${escapeHtml(dev ? dev[0] : "Not recorded")}<br>
+     Crisis Response: ${escapeHtml(event ? event[0] : "Not recorded")}<br>
+     Trade: ${escapeHtml(tradeSummary || "Not recorded")}<br>
+     Final Policy: ${escapeHtml(policy ? policy[0] : "Not recorded")}`;
+  document.getElementById("studentSummaryReflection").innerHTML =
+    `<strong>Exit Reflection:</strong><br>${escapeHtml(reflection)}`;
+
+  document.getElementById("resultsSummaryCard").classList.remove("hidden");
+  document.getElementById("resultsSummaryCard").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function escapeHtml(text){
+  return String(text).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[ch]));
+}
+
+renderCountries();
+</script>
+</body>
+</html>
